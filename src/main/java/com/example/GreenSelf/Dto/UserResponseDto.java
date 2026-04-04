@@ -12,11 +12,20 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public class UserResponseDto{
+    int id;
     String username;
     Role role;
     private LocalDateTime createAt;
     private LocalDateTime updatedAt;
     List<Address> addressList;
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
 
     public String getUsername() {
         return username;

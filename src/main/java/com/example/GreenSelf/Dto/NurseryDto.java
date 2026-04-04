@@ -7,10 +7,18 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 
 public class NurseryDto{
-
+    private int id;
     String name;
     String licenceNumber;
     Address address;
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
 
     public String getName() {
         return name;

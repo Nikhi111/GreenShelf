@@ -9,10 +9,29 @@ public class Seller{
     @OneToOne
     User user;
     String nurseryName;
+    private boolean bankVerified;
     @OneToMany
     List<Nursery> nurseries;
     @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT false")
     Boolean isApprovedSeller=false;
+    @OneToMany(mappedBy = "seller", cascade = CascadeType.ALL)
+    private List<BankDetails> bankAccounts;
+
+    public List<BankDetails> getBankAccounts() {
+        return bankAccounts;
+    }
+
+    public void setBankAccounts(List<BankDetails> bankAccounts) {
+        this.bankAccounts = bankAccounts;
+    }
+
+    public boolean isBankVerified() {
+        return bankVerified;
+    }
+
+    public void setBankVerified(boolean bankVerified) {
+        this.bankVerified = bankVerified;
+    }
 
     public String getNurseryName() {
         return nurseryName;

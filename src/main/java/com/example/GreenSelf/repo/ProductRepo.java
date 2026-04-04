@@ -8,11 +8,12 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface   ProductRepo  extends JpaRepository<Product,Integer> {
-
+public interface ProductRepo extends JpaRepository<Product, Integer> {
     Page<Product> findByNameContainingIgnoreCase(
             String keyword,
-            Pageable pageable
-    );
+            Pageable pageable);
 
+    Page<Product> findByCategoryIgnoreCase(String category, Pageable pageable);
+    
+    Page<Product> findByNurseryId(int nurseryId, Pageable pageable);
 }

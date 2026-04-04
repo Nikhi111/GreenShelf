@@ -3,6 +3,7 @@ package com.example.GreenSelf.repo;
 import com.example.GreenSelf.entity.Nursery;
 import com.example.GreenSelf.entity.Seller;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -14,6 +15,8 @@ public interface NurseryRepo extends JpaRepository<Nursery, Integer> {
             Seller owner,
             Boolean isVerified
     );
-    Page<Nursery> findByOwner(Seller owner);
+    Page<Nursery> findByOwner(Seller seller, Pageable pageable);
+    
+    Page<Nursery> findByNameContainingIgnoreCase(String name, Pageable pageable);
 
 }

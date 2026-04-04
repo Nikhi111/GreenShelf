@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
+@Table(name = "users")
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -15,6 +16,7 @@ public class User {
     String password;
     @Enumerated(EnumType.STRING)
     Role role;
+
     @OneToMany
     List<Order> Orders;
     @CreationTimestamp

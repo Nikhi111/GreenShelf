@@ -3,6 +3,7 @@ package com.example.GreenSelf.entity;
 import jakarta.persistence.*;
 
 @Entity
+@Table(name = "seller_requests")
 public class SellerRequest {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

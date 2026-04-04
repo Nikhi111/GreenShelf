@@ -23,6 +23,7 @@ public class Product {
     private LocalDateTime createAt;
      @UpdateTimestamp
     private  LocalDateTime updatedAt;
+    private String category;
 
     public int getId() {
         return id;
@@ -96,5 +97,13 @@ public class Product {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public String getCategory() {
+        return category;
+    }
+
+    public void setCategory(String category) {
+        this.category = category;
     }
 }

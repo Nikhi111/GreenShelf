@@ -35,8 +35,10 @@ public class AdminService {
     PasswordEncoder passwordEncoder;
     @Transactional
     public String verifyRequestSeller(SellerRequestDto sellerRequestDto){
+        System.out.println("entered the verifed seller");
       Seller seller=sellerRepo.findById(sellerRequestDto.getId()).orElseThrow(()->new RuntimeException("Seller not found"));
       seller.setApprovedSeller(true);
+        System.out.println("set verifed seller");
       sellerRepo.save(seller);
       return (seller.getApprovedSeller())?"verfied true":"verified false";
     }
@@ -50,22 +52,23 @@ public class AdminService {
        return "Verified Successfully";
     }
     @Transactional
-    public void createAdmin(UserRequestDto userRequestDto) {
+    public User createAdmin(UserRequestDto userRequestDto) {
         Optional<User> data=userRepo.findUserByUsername(userRequestDto.getUsername());
         User user=new User();
         if (data.isPresent()) throw new RuntimeException("User Already exist"+user.getUsername());
         user.setUsername(userRequestDto.getUsername());
         user.setPassword(passwordEncoder.encode(userRequestDto.getPassword()));
         user.setRole(Role.ADMIN);
-        userRepo.save(user);
+       return userRepo.save(user);
     }
 
     public Page<NurseryDto> findAllNursery(String username, Pageable pageable) {
         User user =userRepo.findUserByUsername(username).orElseThrow(()-> new ResponseStatusException(HttpStatus.NOT_FOUND,"no such user exist"));
-        if (user.getRole()!=Role.ADMIN) new ResponseStatusException(HttpStatus.FORBIDDEN,"this role dont have access to this url");
+        if (user.getRole()!=Role.ADMIN) throw new ResponseStatusException(HttpStatus.FORBIDDEN,"this role dont have access to this url");
         Page<Nursery> nurseries=nurseryRepo.findAll(pageable);
         return nurseries.map(nursery -> {
             NurseryDto nurseryDto=new NurseryDto();
+                  nurseryDto.setId(nursery.getId());
                   nurseryDto.setLicenceNumber(nursery.getLicenceNumber());
                   nurseryDto.setAddress(nursery.getAddress());
                   nurseryDto.setName(nursery.getName());
@@ -73,12 +76,28 @@ public class AdminService {
         });
     }
 
+    public Page<NurseryDto> searchNurseryByName(String username, String name, Pageable pageable) {
+        User user = userRepo.findUserByUsername(username).orElseThrow(()-> new ResponseStatusException(HttpStatus.NOT_FOUND,"no such user exist"));
+        if (user.getRole() != Role.ADMIN) throw new ResponseStatusException(HttpStatus.FORBIDDEN,"this role dont have access to this url");
+        Page<Nursery> nurseries = nurseryRepo.findByNameContainingIgnoreCase(name, pageable);
+        return nurseries.map(nursery -> {
+            NurseryDto nurseryDto = new NurseryDto();
+            nurseryDto.setId(nursery.getId());
+            nurseryDto.setLicenceNumber(nursery.getLicenceNumber());
+            nurseryDto.setAddress(nursery.getAddress());
+            nurseryDto.setName(nursery.getName());
+            return nurseryDto;
+        });
+    }
+
+
     public Page<SellerDto> findAllseller(String username, Pageable pageable) {
         User user =userRepo.findUserByUsername(username).orElseThrow(()-> new ResponseStatusException(HttpStatus.NOT_FOUND,"no such user exist"));
         if (user.getRole()!=Role.ADMIN) new ResponseStatusException(HttpStatus.FORBIDDEN,"this role dont have access to this url");
         Page<Seller> sellers=sellerRepo.findAll(pageable);
         return sellers.map(seller -> {
             SellerDto sellerDto=new SellerDto();
+            sellerDto.setId(seller.getId());
             sellerDto.setName(seller.getNurseryName());
             sellerDto.setVerified(seller.getApprovedSeller());
             sellerDto.setNurseryName(seller.getNurseryName());

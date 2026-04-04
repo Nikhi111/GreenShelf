@@ -62,7 +62,6 @@ public class Cart {
     public void removeCartProduct(CartProduct cartProduct) {
         if (cartproductList != null) {
             cartproductList.remove(cartProduct);
-            cartProduct.setCart(null);
         }
     }
 

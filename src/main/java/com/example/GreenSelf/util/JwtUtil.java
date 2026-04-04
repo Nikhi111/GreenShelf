@@ -3,6 +3,7 @@ package com.example.GreenSelf.util;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.security.Key;
@@ -11,8 +12,11 @@ import java.util.Date;
 @Component
 public class JwtUtil {
 
-    private final String SECRET = "mySuperSecretKeyMySuperSecretKey";
-    private final long EXPIRATION = 1000 * 60 * 15; // 15 mins
+    @Value("${jwt.secret:mySuperSecretKeyMySuperSecretKey}")
+    private String SECRET;
+    
+    // Extends JWT to 24 hours to prevent constant kick-outs during live shopping
+    private final long EXPIRATION = 1000 * 60 * 60 * 24;
 
     private Key getSignKey() {
         return Keys.hmacShaKeyFor(SECRET.getBytes());

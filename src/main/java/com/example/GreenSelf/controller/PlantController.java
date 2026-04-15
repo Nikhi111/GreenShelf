@@ -1,5 +1,4 @@
 package com.example.GreenSelf.controller;
-
 import com.example.GreenSelf.Dto.PlantDto;
 import com.example.GreenSelf.service.PlantService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -74,14 +73,19 @@ public class PlantController {
         }
 
         @GetMapping
+        @PreAuthorize("hasAnyRole('ADMIN', 'SELLER', 'VENDER')")
         @Operation(summary = "Get all plants", description = "Retrieves all plants in the catalog")
         @ApiResponses(value = {
                         @ApiResponse(responseCode = "200", description = "Plants retrieved successfully", content = @Content(mediaType = "application/json"))
         })
-        public ResponseEntity<Map<String, String>> getAllPlants() {
-                // Placeholder - implement pagination if needed
-                Map<String, String> response = new HashMap<>();
-                response.put("message", "Implement getAllPlants with pagination");
+        public ResponseEntity<Map<String, Object>> getAllPlants() {
+                // Get all plants from service
+                List<PlantDto> plants = plantService.getAllPlants();
+                
+                Map<String, Object> response = new HashMap<>();
+                response.put("plants", plants);
+                response.put("total", plants.size());
+                response.put("message", "Plants retrieved successfully");
 
                 return ResponseEntity.ok(response);
         }

@@ -35,12 +35,14 @@ public class AdminService {
     PasswordEncoder passwordEncoder;
     @Transactional
     public String verifyRequestSeller(SellerRequestDto sellerRequestDto){
-        System.out.println("entered the verifed seller");
-      Seller seller=sellerRepo.findById(sellerRequestDto.getId()).orElseThrow(()->new RuntimeException("Seller not found"));
-      seller.setApprovedSeller(true);
-        System.out.println("set verifed seller");
-      sellerRepo.save(seller);
-      return (seller.getApprovedSeller())?"verfied true":"verified false";
+        System.out.println("Processing verification for seller: " + sellerRequestDto.getSellerId());
+        Seller seller = sellerRepo.findById(sellerRequestDto.getSellerId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Seller not found with ID: " + sellerRequestDto.getSellerId()));
+        
+        seller.setApprovedSeller(sellerRequestDto.isApproved());
+        sellerRepo.save(seller);
+        
+        return seller.getApprovedSeller() ? "Seller verified successfully" : "Seller verification rejected";
     }
     @Transactional
     public String verifyNusery(String username, int nurseryId) {
@@ -89,11 +91,9 @@ public class AdminService {
             return nurseryDto;
         });
     }
-
-
     public Page<SellerDto> findAllseller(String username, Pageable pageable) {
         User user =userRepo.findUserByUsername(username).orElseThrow(()-> new ResponseStatusException(HttpStatus.NOT_FOUND,"no such user exist"));
-        if (user.getRole()!=Role.ADMIN) new ResponseStatusException(HttpStatus.FORBIDDEN,"this role dont have access to this url");
+        if (user.getRole() != Role.ADMIN) throw new ResponseStatusException(HttpStatus.FORBIDDEN, "This role does not have access to this resource");
         Page<Seller> sellers=sellerRepo.findAll(pageable);
         return sellers.map(seller -> {
             SellerDto sellerDto=new SellerDto();
@@ -101,9 +101,28 @@ public class AdminService {
             sellerDto.setName(seller.getNurseryName());
             sellerDto.setVerified(seller.getApprovedSeller());
             sellerDto.setNurseryName(seller.getNurseryName());
+            if (seller.getUser() != null) {
+                sellerDto.setUsername(seller.getUser().getUsername());
+            }
             return sellerDto;
         });
     }
 
+    // Statistics methods for dashboard
+    public long getTotalNurseries() {
+        return nurseryRepo.count();
+    }
+
+    public long getTotalSellers() {
+        return sellerRepo.count();
+    }
+
+    public long getPendingSellers() {
+        return sellerRepo.countByIsApprovedSellerFalse();
+    }
+
+    public long getPendingNurseries() {
+        return nurseryRepo.countByIsVerifiedFalse();
+    }
 
 }

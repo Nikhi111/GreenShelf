@@ -1,6 +1,7 @@
 package com.example.GreenSelf.Dto;
 
 public class PlantDto {
+    private int id;
     private int plantId;
     private String commonName;
     private String scientificName;
@@ -18,6 +19,14 @@ public class PlantDto {
     private String growthRate;
     private String soilType;
     private String floweringSeason;
+
+    public int getId() {
+        return id;
+    }
+    
+    public void setId(int id) {
+        this.id = id;
+    }
 
     public int getPlantId() {
         return plantId;

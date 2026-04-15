@@ -1,22 +1,23 @@
 package com.example.GreenSelf.Dto;
 
-import com.example.GreenSelf.entity.SellerRequestStatus;
-
 public class SellerRequestDto {
-    int id;
-    boolean isVerified;
-    public int getId() {
-        return id;
-    }
-    public void setId(int id) {
-        this.id = id;
+    private int sellerId;
+    private boolean approved;
+
+    public int getSellerId() {
+        return sellerId;
     }
 
-    public boolean isVerified() {
-        return isVerified;
+    public void setSellerId(int sellerId) {
+        this.sellerId = sellerId;
     }
 
-    public void setVerified(boolean verified) {
-        isVerified = verified;
+    public boolean isApproved() {
+        return approved;
+    }
+
+    public void setApproved(boolean approved) {
+        this.approved = approved;
     }
 }
+

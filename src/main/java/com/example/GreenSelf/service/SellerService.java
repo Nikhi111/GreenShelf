@@ -96,19 +96,29 @@ public class SellerService {
 
     @Transactional
     public void addProduct(String username, int nurseryId, ProductDto productDto) {
-        User user = userRepo.findByUsernameAndRole(username, Role.VENDER)
+        User user = userRepo.findUserByUsername(username)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+        
         Seller seller = sellerRepo.findByUserAndIsApprovedSeller(user, true)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "Seller not approved"));
-        Nursery nursery = nurseryRepo.findByIdAndOwnerAndIsVerified(nurseryId, seller, true)
+        
+        Nursery nursery = nurseryRepo.findById(nurseryId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Nursery not found"));
+        
+        if (!nursery.getOwner().equals(seller)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Not your nursery");
+        }
+        
+        if (!nursery.isVerified()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Nursery not verified");
+        }
 
         Inventory inventory = nursery.getInventory();
         InventoryProduct inventoryProduct = new InventoryProduct();
         inventoryProduct.setInventory(inventory);
         inventoryProduct.setCount(productDto.getStock());
-        Plant plant = plantRepo.findByPlantId(productDto.getPlantId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Plant not available"));
+        Plant plant = plantRepo.findById(productDto.getPlantId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Plant not found in catalog"));
         Product product = new Product();
         product.setPlant(plant);
         product.setName(plant.getCommonName());
@@ -128,15 +138,17 @@ public class SellerService {
                     nurseryDto.setAddress(nursery.getAddress());
                     nurseryDto.setName(nursery.getName());
                     nurseryDto.setLicenceNumber(nursery.getLicenceNumber());
+                    nurseryDto.setVerified(nursery.isVerified());
+                    nurseryDto.setId(nursery.getId());
                     return nurseryDto;
                 });
     }
 
     public Page<NurseryDto> findNursery(String username, Pageable pageable) {
         User user = userRepo.findUserByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User does not exsist"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User does not exist"));
         Seller seller = sellerRepo.findByUserAndIsApprovedSeller(user, true)
-                .orElseThrow(() -> new RuntimeException("seller is not approved or not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "Seller is not approved or not found"));
         Page<Nursery> nurseries = nurseryRepo.findByOwner(seller, pageable);
         return nurseryToNuseryDto(nurseries);
     }
@@ -320,6 +332,20 @@ public class SellerService {
         Order savedOrder = orderRepo.save(order);
         
         return buildOrderResponseFromOrder(savedOrder);
+    }
+
+    public SellerDto getSellerProfile(String username) {
+        User user = userRepo.findUserByUsername(username)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+        Seller seller = sellerRepo.findByUser(user)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Seller profile not found"));
+        
+        SellerDto dto = new SellerDto();
+        dto.setId(seller.getId());
+        dto.setUsername(user.getUsername());
+        dto.setVerified(seller.getApprovedSeller() != null ? seller.getApprovedSeller() : false);
+        dto.setNurseryName(seller.getNurseryName());
+        return dto;
     }
 
     private OrderResponse buildOrderResponseFromOrder(Order order) {

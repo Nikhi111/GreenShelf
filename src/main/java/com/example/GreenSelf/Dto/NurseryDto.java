@@ -11,6 +11,7 @@ public class NurseryDto{
     String name;
     String licenceNumber;
     Address address;
+    boolean verified;
 
     public int getId() {
         return id;
@@ -42,5 +43,13 @@ public class NurseryDto{
 
     public void setAddress(Address address) {
         this.address = address;
+    }
+
+    public boolean isVerified() {
+        return verified;
+    }
+
+    public void setVerified(boolean verified) {
+        this.verified = verified;
     }
 }

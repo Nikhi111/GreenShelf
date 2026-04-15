@@ -1,10 +1,12 @@
 package com.example.GreenSelf.controller;
 
 import com.example.GreenSelf.Dto.CartDto;
+import com.example.GreenSelf.Dto.CartResponseDto;
 import com.example.GreenSelf.Dto.OrderResponse;
 import com.example.GreenSelf.Dto.UserRequestDto;
 import com.example.GreenSelf.entity.Address;
 import com.example.GreenSelf.entity.User;
+import com.example.GreenSelf.repo.UserRepo;
 import com.example.GreenSelf.service.UserService;
 import com.example.GreenSelf.util.JwtUtil;
 import io.swagger.v3.oas.annotations.Operation;
@@ -39,6 +41,9 @@ public class UserController {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private UserRepo userRepo;
 
     private final AuthenticationManager authenticationManager;
     private final JwtUtil jwtUtil;
@@ -117,12 +122,27 @@ public class UserController {
             @ApiResponse(responseCode = "401", description = "Not authenticated",
                     content = @Content)
     })
-    public ResponseEntity<Map<String, String>> getCurrentUser(
+    public ResponseEntity<Map<String, Object>> getCurrentUser(
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        Map<String, String> response = new HashMap<>();
+        System.out.println("=== Backend Debug - getCurrentUser ===");
+        System.out.println("UserDetails username: " + userDetails.getUsername());
+
+        // Get user from database to include role information
+        User user = userRepo.findUserByUsername(userDetails.getUsername())
+                .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND, "User not found"));
+
+        System.out.println("Found user: " + user.getUsername());
+        System.out.println("User role: " + user.getRole());
+        System.out.println("User role toString: " + user.getRole().toString());
+
+        Map<String, Object> response = new HashMap<>();
         response.put("username", userDetails.getUsername());
+        response.put("role", user.getRole().toString());
         response.put("message", "Hello, " + userDetails.getUsername());
+
+        System.out.println("Response map: " + response);
+        System.out.println("=== End Backend Debug ===");
 
         return ResponseEntity.ok(response);
     }
@@ -160,11 +180,27 @@ public class UserController {
             @ApiResponse(responseCode = "401", description = "Not authenticated",
                     content = @Content)
     })
-    public ResponseEntity<?> getCart(
+    public ResponseEntity<CartResponseDto> getCart(
             @AuthenticationPrincipal UserDetails userDetails) {
-
-        Object cart = userService.getCart(userDetails.getUsername());
+        CartResponseDto cart = userService.getCart(userDetails.getUsername());
         return ResponseEntity.ok(cart);
+    }
+
+    @DeleteMapping("/user/cart")
+    @SecurityRequirement(name = "bearerAuth")
+    @Operation(summary = "Clear cart", description = "Clears all items from user's cart")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Cart cleared successfully",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "401", description = "Not authenticated",
+                    content = @Content)
+    })
+    public ResponseEntity<Map<String, String>> clearCart(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        userService.clearCart(userDetails.getUsername());
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "Cart cleared successfully");
+        return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/user/cart/{itemId}")
@@ -196,13 +232,51 @@ public class UserController {
             @PathVariable Integer productId,
             @RequestParam Integer count) {
 
-        userService.updateCartItemQuantity(userDetails.getUsername(), productId, count);
-        Map<String, String> response = new HashMap<>();
-        response.put("message", "Quantity updated successfully");
-        return ResponseEntity.ok(response);
+        try {
+            System.out.println("🛒 Update cart quantity request:");
+            System.out.println("  - Username: " + userDetails.getUsername());
+            System.out.println("  - Product ID: " + productId);
+            System.out.println("  - Count: " + count);
+            
+            userService.updateCartItemQuantity(userDetails.getUsername(), productId, count);
+            
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "Quantity updated successfully");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            System.err.println("❌ Error updating cart quantity:");
+            System.err.println("  - Username: " + userDetails.getUsername());
+            System.err.println("  - Product ID: " + productId);
+            System.err.println("  - Count: " + count);
+            System.err.println("  - Error: " + e.getMessage());
+            e.printStackTrace();
+            
+            Map<String, String> response = new HashMap<>();
+            response.put("error", "Failed to update cart quantity: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
     }
 
-    @PostMapping("/order/create")
+    @GetMapping("/admin/inventory/add-stock/{productId}/{quantity}")
+@Operation(summary = "Add stock to inventory (for testing)", description = "Adds stock to product inventory")
+public ResponseEntity<Map<String, String>> addStock(
+        @PathVariable Integer productId,
+        @PathVariable Integer quantity) {
+    
+    try {
+        // This is a temporary endpoint for testing - remove in production
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "Stock added successfully (endpoint for testing only)");
+        response.put("note", "Remove this endpoint in production");
+        return ResponseEntity.ok(response);
+    } catch (Exception e) {
+        Map<String, String> response = new HashMap<>();
+        response.put("error", "Failed to add stock: " + e.getMessage());
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+    }
+}
+
+@PostMapping("/order/create")
     @SecurityRequirement(name = "bearerAuth")
     @Operation(summary = "Create order", description = "Creates a new order from user's cart")
     @ApiResponses(value = {

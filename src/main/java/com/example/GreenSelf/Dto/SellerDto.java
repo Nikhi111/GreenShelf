@@ -1,12 +1,11 @@
 package com.example.GreenSelf.Dto;
 
 public class SellerDto {
-    int id;
-    String name;
-    String nurseryName;
-    boolean isVerified;
-
-
+    private int id;
+    private String name;
+    private String nurseryName;
+    private boolean isVerified;
+    private String username;
 
     public int getId() {
         return id;
@@ -39,4 +38,14 @@ public class SellerDto {
     public void setVerified(boolean verified) {
         isVerified = verified;
     }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
 }
+
+

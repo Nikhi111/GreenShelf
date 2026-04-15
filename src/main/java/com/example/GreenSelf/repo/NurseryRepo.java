@@ -18,5 +18,6 @@ public interface NurseryRepo extends JpaRepository<Nursery, Integer> {
     Page<Nursery> findByOwner(Seller seller, Pageable pageable);
     
     Page<Nursery> findByNameContainingIgnoreCase(String name, Pageable pageable);
+    long countByIsVerifiedFalse();
 
 }

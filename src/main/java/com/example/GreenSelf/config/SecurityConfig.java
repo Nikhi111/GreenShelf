@@ -1,8 +1,10 @@
 package com.example.GreenSelf.config;
+
 import com.example.GreenSelf.filter.JwtAuthFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -21,56 +23,86 @@ import java.util.Arrays;
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
+
     @Autowired
     JwtAuthFilter jwtAuthFilter;
+
+    private static final String[] PUBLIC_ENDPOINTS = {
+            "/swagger-ui/**",
+            "/api/auth/register",
+            "/v3/api-docs/**",
+            "/swagger-ui.html",
+            "/api/user/register",
+            "/api/auth/login",
+            "/api/admin/register",
+            "/api/seller/register",
+            "/api/public/home",
+            "/home",
+            "/api/products/**",
+            "/api/recommend/**",
+            "/api/webhook/**",
+            "/error"
+    };
+
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
+                // ✅ Enable CORS properly
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+
+                // ✅ Disable CSRF for APIs
                 .csrf(csrf -> csrf.disable())
+
+                // ✅ Stateless session (JWT)
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
+
+                // ✅ Authorization rules
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(
-                                "/swagger-ui/**",
-                                "/v3/api-docs/**",
-                                "/swagger-ui.html"
-                        ).permitAll()
-                        .requestMatchers(
-                                "/api/user/register",
-                                "/api/auth/login",
-                                "/api/admin/register",
-                                "/api/seller/register",
-                                "/home",
-                                "/api/products/**"
-                        ).permitAll()
-                        .requestMatchers("/error").permitAll()
+                        .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/plants/**").permitAll()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
+
+                // ⚠️ JWT Filter (keep it, but if issue → comment for testing)
                 .addFilterBefore(jwtAuthFilter, BasicAuthenticationFilter.class)
+
                 .build();
     }
 
+    // ✅ FIXED CORS CONFIG
     @Bean
-    CorsConfigurationSource corsConfigurationSource() {
+    public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173"));
+
+        // 🔥 Allow all origins (for development)
+        configuration.setAllowedOriginPatterns(Arrays.asList("*"));
+
+        // 🔥 Allow all HTTP methods
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type"));
+
+        // 🔥 IMPORTANT FIX → allow all headers
+        configuration.setAllowedHeaders(Arrays.asList("*"));
+
+        // 🔥 Allow credentials (cookies / auth headers)
         configuration.setAllowCredentials(true);
+
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
+
         return source;
     }
 
     @Bean
-    PasswordEncoder passwordEncoder(){
+    public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
+
     @Bean
-    AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration)
+            throws Exception {
         return authenticationConfiguration.getAuthenticationManager();
     }
 }

@@ -10,10 +10,13 @@ import org.springframework.web.server.ResponseStatusException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import java.util.List;
+import java.util.stream.Collectors;
+
 @Service
 public class PlantService {
     @Autowired
     PlantRepo plantRepo;
+
     public void addPlants(List<PlantDto> plantDtos) {
         for (PlantDto dto: plantDtos){
             addPlant(dto);
@@ -46,6 +49,7 @@ public class PlantService {
         Page<Plant> plants = plantRepo.findByCommonNameContainingIgnoreCaseOrScientificNameContainingIgnoreCase(name, name, pageable);
         return plants.map(plant -> {
             PlantDto dto = new PlantDto();
+            dto.setId(plant.getId());
             dto.setPlantId(plant.getPlantId());
             dto.setCommonName(plant.getCommonName());
             dto.setScientificName(plant.getScientificName());
@@ -65,5 +69,33 @@ public class PlantService {
             dto.setFloweringSeason(plant.getFloweringSeason());
             return dto;
         });
+    }
+
+    public List<PlantDto> getAllPlants() {
+        List<Plant> plants = plantRepo.findAll();
+        return plants.stream()
+                .map(plant -> {
+                    PlantDto dto = new PlantDto();
+                    dto.setId(plant.getId());
+                    dto.setPlantId(plant.getPlantId());
+                    dto.setCommonName(plant.getCommonName());
+                    dto.setScientificName(plant.getScientificName());
+                    dto.setDescription(plant.getDescription());
+                    dto.setImageUrl(plant.getImageUrl());
+                    dto.setWateringFrequency(plant.getWateringFrequency());
+                    dto.setWateringDays(plant.getWateringDays());
+                    dto.setSunlight(plant.getSunlight());
+                    dto.setCareLevel(plant.getCareLevel());
+                    dto.setToxicToPets(plant.isToxicToPets());
+                    dto.setToxicToHumans(plant.isToxicToHumans());
+                    dto.setIndoorPlant(plant.isIndoorPlant());
+                    dto.setHardinessMin(plant.getHardinessMin());
+                    dto.setHardinessMax(plant.getHardinessMax());
+                    dto.setGrowthRate(plant.getGrowthRate());
+                    dto.setSoilType(plant.getSoilType());
+                    dto.setFloweringSeason(plant.getFloweringSeason());
+                    return dto;
+                })
+                .collect(Collectors.toList());
     }
 }

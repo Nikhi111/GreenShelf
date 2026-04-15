@@ -21,8 +21,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-
-
 @RestController
 @RequestMapping("/api/products")
 @Tag(name = "Product Catalog", description = "Public product browsing and search operations")

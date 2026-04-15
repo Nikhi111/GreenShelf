@@ -12,5 +12,7 @@ import java.util.Optional;
 @Repository
 public interface SellerRepo extends JpaRepository<Seller, Integer> {
     Optional<Seller> findByUserAndIsApprovedSeller(User user, Boolean isApprovedSeller);
+    Optional<Seller> findByUser(User user);
     Page<Seller> findByUserUsernameContainingIgnoreCase(String username, Pageable pageable);
+    long countByIsApprovedSellerFalse();
 }

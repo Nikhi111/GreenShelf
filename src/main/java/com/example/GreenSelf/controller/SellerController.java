@@ -4,6 +4,7 @@ import com.example.GreenSelf.Dto.*;
 import com.example.GreenSelf.entity.Nursery;
 import com.example.GreenSelf.entity.OrderStatus;
 import com.example.GreenSelf.service.SellerService;
+import com.example.GreenSelf.service.PlantService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -38,6 +39,9 @@ public class SellerController {
         @Autowired
         private SellerService service;
 
+        @Autowired
+        private PlantService plantService;
+
         @PostMapping("/register")
         @Operation(summary = "Register as seller", description = "Creates a new seller account")
         @ApiResponses(value = {
@@ -53,7 +57,7 @@ public class SellerController {
         }
 
         @PostMapping("/nursery")
-        @PreAuthorize("hasRole('SELLER')")
+        @PreAuthorize("hasAnyRole('SELLER', 'VENDER')")
         @Operation(summary = "Add a nursery", description = "Creates a new nursery for the seller")
         @ApiResponses(value = {
                         @ApiResponse(responseCode = "201", description = "Nursery created successfully", content = @Content(mediaType = "application/json")),
@@ -75,7 +79,7 @@ public class SellerController {
         }
 
         @PostMapping("/nursery/{nurseryId}/product")
-        @PreAuthorize("hasRole('SELLER')")
+        @PreAuthorize("hasAnyRole('SELLER', 'VENDER')")
         @Operation(summary = "Add product to nursery", description = "Adds a new product to seller's nursery inventory")
         @ApiResponses(value = {
                         @ApiResponse(responseCode = "201", description = "Product added successfully", content = @Content(mediaType = "application/json")),
@@ -97,7 +101,7 @@ public class SellerController {
         }
 
         @GetMapping("/nursery")
-        @PreAuthorize("hasRole('SELLER')")
+        @PreAuthorize("hasAnyRole('SELLER', 'VENDER')")
         @Operation(summary = "Get seller's nurseries", description = "Retrieves all nurseries belonging to the seller")
         @ApiResponses(value = {
                         @ApiResponse(responseCode = "200", description = "Nurseries retrieved successfully", content = @Content(mediaType = "application/json", schema = @Schema(implementation = Page.class))),
@@ -112,7 +116,7 @@ public class SellerController {
         }
 
         @GetMapping("/nursery/{nurseryId}/inventory")
-        @PreAuthorize("hasRole('SELLER')")
+        @PreAuthorize("hasAnyRole('SELLER', 'VENDER')")
         @Operation(summary = "Get nursery inventory", description = "Retrieves all products in seller's nursery")
         @ApiResponses(value = {
                         @ApiResponse(responseCode = "200", description = "Inventory retrieved successfully", content = @Content(mediaType = "application/json", schema = @Schema(implementation = Page.class))),
@@ -130,7 +134,7 @@ public class SellerController {
         }
 
         @PatchMapping("/nursery/{nurseryId}/product/{productId}")
-        @PreAuthorize("hasRole('SELLER')")
+        @PreAuthorize("hasAnyRole('SELLER', 'VENDER')")
         @Operation(summary = "Update product", description = "Updates product details in seller's nursery")
         @ApiResponses(value = {
                         @ApiResponse(responseCode = "200", description = "Product updated successfully", content = @Content(mediaType = "application/json")),
@@ -150,7 +154,7 @@ public class SellerController {
         }
 
         @DeleteMapping("/nursery/{nurseryId}/product/{productId}")
-        @PreAuthorize("hasRole('SELLER')")
+        @PreAuthorize("hasAnyRole('SELLER', 'VENDER')")
         @Operation(summary = "Delete product", description = "Removes a product from seller's nursery")
         @ApiResponses(value = {
                         @ApiResponse(responseCode = "200", description = "Product deleted successfully", content = @Content(mediaType = "application/json")),
@@ -209,5 +213,41 @@ public class SellerController {
 
             OrderResponse updatedOrder = service.updateOrderStatus(userDetails.getUsername(), nurseryId, orderId, status);
             return ResponseEntity.ok(updatedOrder);
+        }
+
+        @GetMapping("/profile")
+        @PreAuthorize("hasAnyRole('SELLER', 'ADMIN', 'VENDER')")
+        @Operation(summary = "Get seller profile", description = "Retrieves current seller's information and verification status")
+        public ResponseEntity<SellerDto> getSellerProfile(@AuthenticationPrincipal UserDetails userDetails) {
+            SellerDto profile = service.getSellerProfile(userDetails.getUsername());
+            return ResponseEntity.ok(profile);
+        }
+
+        @GetMapping("/plants/search")
+        @PreAuthorize("hasAnyRole('SELLER', 'VENDER')")
+        @Operation(summary = "Search plants for dropdown", description = "Retrieves a paginated list of botanical plants for the add-product dropdown")
+        public ResponseEntity<Page<PlantDto>> searchPlantsForDropdown(
+                @RequestParam(required = false, defaultValue = "") @Parameter(description = "Search query for plant name") String name,
+                @Parameter(description = "Pagination parameters") Pageable pageable) {
+            
+            Page<PlantDto> plants = plantService.searchPlantsByName(name, pageable);
+            return ResponseEntity.ok(plants);
+        }
+
+        @GetMapping("/nursery/{nurseryId}")
+        @PreAuthorize("hasAnyRole('SELLER', 'VENDER')")
+        @Operation(summary = "Get nursery details", description = "Retrieves details for a specific nursery")
+        public ResponseEntity<NurseryDto> getNurseryById(
+                @AuthenticationPrincipal UserDetails userDetails,
+                @PathVariable int nurseryId) {
+            
+            // Fetch nurseries for user with a safe default rather than unpaged()
+            Page<NurseryDto> nurseries = service.findNursery(userDetails.getUsername(), org.springframework.data.domain.PageRequest.of(0, 100));
+            NurseryDto nursery = nurseries.getContent().stream()
+                    .filter(n -> n.getId() == nurseryId)
+                    .findFirst()
+                    .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND, "Nursery not found"));
+            
+            return ResponseEntity.ok(nursery);
         }
 }

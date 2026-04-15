@@ -16,6 +16,7 @@ import java.io.IOException;
 
 @Component
 public class JwtAuthFilter extends OncePerRequestFilter {
+
     private final JwtUtil jwtUtil;
     private final UserDetailsService userDetailsService;
 
@@ -30,7 +31,22 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                                     FilterChain filterChain)
             throws ServletException, IOException {
 
+        String path = request.getRequestURI();
+
+        // ✅ FIXED: Only skip public endpoints, not all /api/user
+        if (path.startsWith("/api/products") ||
+                path.startsWith("/api/auth") ||
+                path.equals("/api/user/register") ||  // ✅ Only skip registration
+                path.startsWith("/swagger-ui") ||
+                path.startsWith("/v3/api-docs") ||
+                path.startsWith("/error")) {
+
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         System.out.println("===== JWT FILTER START =====");
+        System.out.println("Processing path: " + path);
 
         String authHeader = request.getHeader("Authorization");
         System.out.println("STEP 1 Header: " + authHeader);
@@ -51,16 +67,12 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 UserDetails userDetails =
                         userDetailsService.loadUserByUsername(username);
 
-                System.out.println("STEP 5 Authorities: " + userDetails.getAuthorities());
-
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(
                                 userDetails, null, userDetails.getAuthorities());
 
                 SecurityContextHolder.getContext().setAuthentication(authentication);
-
-                System.out.println("STEP 6 Auth Set: " +
-                        SecurityContextHolder.getContext().getAuthentication());
+                System.out.println("STEP 5 Authentication set for: " + username);
             }
         }
 

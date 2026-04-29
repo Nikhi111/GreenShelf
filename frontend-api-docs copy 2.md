@@ -34,7 +34,7 @@ _Ensure `Authorization: Bearer <token>` is sent for all headers._
 | PATCH | `/user/cart/{productId}` | Update quantity | Query: `?count=3` | Updates quantity in the cart (Max limit enforced). | Yes |
 | DELETE| `/user/cart/{itemId}` | Remove Item | Path: `{itemId}` | Removes from cart. | Yes |
 
-## 4. Checkout and Orders
+## 4. Checkout and Orderrs
 | Method | Endpoint | Description | Request Body / Path | Response / Behavior | Require Auth Token |
 |---|---|---|---|---|---|
 | POST | `/order/create` | Checkout Cart | `{ "street": "...", "city": "...", "zipCode": "..." }` (Address object) | Completes transaction, returns `OrderResponse`. | Yes |
